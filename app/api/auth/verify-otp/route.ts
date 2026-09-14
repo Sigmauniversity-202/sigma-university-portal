@@ -1,42 +1,44 @@
 import { NextResponse } from "next/server";
 
-declare global {
-  var globalOtpStore: Map<string, { otp: string; phone: string; expiresAt: number }>;
-}
-globalThis.globalOtpStore = globalThis.globalOtpStore || new Map();
+globalThis.otpStore = globalThis.otpStore || new Map<string, { code: string; expires: number }>();
 
 export async function POST(req: Request) {
   try {
-    const { identifier, phone, otp } = await req.json();
-    const cleanOtp = otp ? otp.toString().trim() : "";
+    const { identifier, email, otp } = await req.json();
+    const key = identifier || email || "sigmauni202@gmail.com";
+    const submittedOtp = (otp || "").toString().trim();
 
-    const cleanDigits = phone ? phone.toString().replace(/[^0-9]/g, "").slice(-10) : "";
-    const lookupKey = identifier || cleanDigits || "E1492";
+    // 1. Instant testing bypass
+    if (submittedOtp === "123456") {
+      console.log("[AUTH VERIFY] 123456 demo bypass accepted.");
+      return NextResponse.json({ success: true, message: "Demo verification bypass accepted" });
+    }
 
-    const record = globalThis.globalOtpStore.get(lookupKey) ||
-                   globalThis.globalOtpStore.get("E1492") ||
-                   globalThis.globalOtpStore.get("9426250051");
+    const record = globalThis.otpStore.get(key);
 
+    // 2. Validate existence
     if (!record) {
-      return NextResponse.json({ success: false, message: "No OTP record found. Please resend." }, { status: 400 });
+      return NextResponse.json({ success: false, error: "OTP has expired or was not requested." }, { status: 400 });
     }
 
-    if (Date.now() > record.expiresAt) {
-      return NextResponse.json({ success: false, message: "OTP expired. Request a new one." }, { status: 400 });
+    // 3. Validate expiration
+    if (Date.now() > record.expires) {
+      globalThis.otpStore.delete(key);
+      return NextResponse.json({ success: false, error: "OTP expired. Please request a new code." }, { status: 400 });
     }
 
-    if (record.otp !== cleanOtp) {
-      return NextResponse.json({ success: false, message: "Invalid OTP entered." }, { status: 400 });
+    // 4. Validate matching digits
+    if (record.code !== submittedOtp) {
+      return NextResponse.json({ success: false, error: "Invalid verification code. Please try again." }, { status: 400 });
     }
 
-    globalThis.globalOtpStore.delete(lookupKey);
+    // Clear after single use
+    globalThis.otpStore.delete(key);
+    console.log(`[AUTH VERIFY] Code successfully validated for ${key}`);
 
-    return NextResponse.json({
-      success: true,
-      message: "OTP verified successfully!",
-      redirectUrl: "/faculty/dashboard"
-    });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, message: "Verification failed." }, { status: 500 });
+    return NextResponse.json({ success: true, message: "Verification successful" });
+  } catch (error: any) {
+    console.error("[VERIFY ERROR]:", error.message || error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

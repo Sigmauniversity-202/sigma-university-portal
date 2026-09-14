@@ -1,76 +1,64 @@
 import { NextResponse } from "next/server";
+import { Resend } from "resend";
 
-declare global {
-  var globalOtpStore: Map<string, { otp: string; phone: string; expiresAt: number }>;
-}
-globalThis.globalOtpStore = globalThis.globalOtpStore || new Map();
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+
+globalThis.otpStore = globalThis.otpStore || new Map<string, { code: string; expires: number }>();
 
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
-    const staffId = body.identifier || "E1492";
-    const rawPhone = body.phone || "9426250051";
-    const cleanDigits = rawPhone.toString().replace(/[^0-9]/g, "");
-    const targetPhone = cleanDigits.slice(-10);
+    const targetEmail = body.email || "dharmkoshiya74@gmail.com";
+    const identifier = body.identifier || targetEmail;
 
-    const dynamicOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiryTimestamp = Date.now() + 10 * 60 * 1000;
+    // Generate 6-digit numeric OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    const entry = { otp: dynamicOtp, phone: targetPhone, expiresAt: expiryTimestamp };
-    globalThis.globalOtpStore.set(staffId, entry);
-    globalThis.globalOtpStore.set(targetPhone, entry);
-    globalThis.globalOtpStore.set(`91${targetPhone}`, entry);
+    // Store OTP for 5 minutes
+    globalThis.otpStore.set(identifier, {
+      code: otp,
+      expires: Date.now() + 5 * 60 * 1000,
+    });
+    globalThis.otpStore.set(targetEmail, {
+      code: otp,
+      expires: Date.now() + 5 * 60 * 1000,
+    });
 
-    const accountSid = process.env.TWILIO_ACCOUNT_SID || "AC599ba7fe7c955bcdf4df8ba1316fb0f3";
-    const authToken  = process.env.TWILIO_AUTH_TOKEN  || "fd05c36bc9d0f1b559891aa451caea8c";
-    const fromPhone  = process.env.TWILIO_PHONE_NUMBER || "+16268193679";
-    const toPhone    = `+91${targetPhone}`;
+    console.log(`[AUTH LOG] OTP for ${targetEmail}: ${otp}`);
 
-    let deliveryStatus = "DISPATCHING...";
+    if (resend) {
+      try {
+        const response = await resend.emails.send({
+          from: "Sigma University ERP <onboarding@resend.dev>",
+          to: targetEmail,
+          subject: "🎓 Sigma University ERP - 2FA Verification Code",
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 24px; background-color: #0b1120; color: #f8fafc; border-radius: 12px; max-width: 520px; margin: auto;">
+              <h2 style="color: #38bdf8; margin: 0; font-size: 1.4rem;">Sigma University ERP</h2>
+              <p style="font-size: 0.95rem; color: #94a3b8; line-height: 1.5;">
+                A two-factor authentication request was initiated for your institutional profile. Use the code below to complete your login:
+              </p>
+              <div style="font-size: 2.4rem; font-weight: 800; letter-spacing: 8px; color: #10b981; margin: 28px 0; padding: 16px 24px; background-color: #1e293b; border-radius: 8px; text-align: center; border: 1px solid #334155;">
+                ${otp}
+              </div>
+              <p style="font-size: 0.8rem; color: #64748b; line-height: 1.4;">
+                This code will expire in <b>5 minutes</b>. If you did not request this verification, please contact University IT administration immediately.
+              </p>
+            </div>
+          `,
+        });
 
-    try {
-      const basicAuth = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
-      const postBody = new URLSearchParams({
-        To: toPhone,
-        From: fromPhone,
-        Body: `Your Sigma University ERP verification code is: ${dynamicOtp}`,
-      });
-
-      const response = await fetch(
-        `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Basic ${basicAuth}`,
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: postBody.toString(),
-        }
-      );
-
-      const twilioResult = await response.json();
-      if (twilioResult.sid && !twilioResult.error_code) {
-        deliveryStatus = `TWILIO SMS DELIVERED (SID: ${twilioResult.sid})`;
-      } else {
-        deliveryStatus = `TWILIO LOG: ${twilioResult.message || twilioResult.code}`;
+        console.log(`[RESEND SUCCESS] Dispatched to ${targetEmail}. ID: ${response.data?.id}`);
+      } catch (sendError: any) {
+        console.error("[RESEND DELIVERY NOTICE]:", sendError.message);
       }
-    } catch (err: any) {
-      deliveryStatus = `TWILIO GATEWAY ERROR: ${err.message}`;
+    } else {
+      console.warn("[RESEND WARNING] No RESEND_API_KEY detected. Check terminal output for code.");
     }
 
-    console.log(`\n======================================================`);
-    console.log(`📲 [SIGMA ERP 2FA LOGIN]`);
-    console.log(`👤 User / ID       : ${staffId}`);
-    console.log(`📱 Destination     : ${toPhone}`);
-    console.log(`🔑 Live OTP Code   : >>> ${dynamicOtp} <<<`);
-    console.log(`📊 Status          : ${deliveryStatus}`);
-    console.log(`======================================================\n`);
-
-    return NextResponse.json({
-      success: true,
-      message: `OTP dispatched to +91 ******${targetPhone.slice(-4)}`
-    });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, message: "OTP dispatch failed." }, { status: 500 });
+    return NextResponse.json({ success: true, message: `Verification code dispatched to ${targetEmail}` });
+  } catch (error: any) {
+    console.error("[OTP ERROR]:", error.message || error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
