@@ -1,79 +1,117 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 
 export default function HodDashboard() {
+  const [approvals, setApprovals] = useState([
+    { id: "EX-601", enr: "210101001", name: "Dharm Paresh Koshiya", sem: "Sem VI", fee: "Cleared", att: "87.4%", status: "Pending" },
+    { id: "EX-602", enr: "210101002", name: "Kavya R. Patel", sem: "Sem VI", fee: "Cleared", att: "88.4%", status: "Pending" },
+    { id: "EX-603", enr: "210101003", name: "Aarav S. Joshi", sem: "Sem VI", fee: "Cleared", att: "84.2%", status: "Pending" }
+  ]);
+
+  const handleApprove = (id: string) => {
+    setApprovals(prev => prev.map(item => item.id === id ? { ...item, status: "Endorsed" } : item));
+  };
+
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#0f172a", color: "#f8fafc", fontFamily: "Segoe UI, sans-serif" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 32px", borderBottom: "1px solid #334155", background: "#1e293b" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <img src="/images/sigma-logo.jpg" alt="Logo" style={{ height: "42px", borderRadius: "6px" }} />
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#0b1120", color: "#f8fafc", fontFamily: "'Inter', system-ui, sans-serif" }}>
+      {/* Sidebar */}
+      <aside style={{ width: "260px", backgroundColor: "#0f172a", borderRight: "1px solid #1e293b", display: "flex", flexDirection: "column", padding: "24px 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "32px", paddingLeft: "8px" }}>
+          <img src="/images/sigma-logo.jpg" alt="Sigma Crest" style={{ width: "40px", height: "40px", borderRadius: "8px", objectFit: "cover" }} />
           <div>
-            <h2 style={{ fontSize: "1.2rem", fontWeight: 800, margin: 0, color: "#ec4899" }}>SIGMA UNIVERSITY</h2>
-            <span style={{ fontSize: "0.75rem", color: "#94a3b8" }}>HOD Executive Management &bull; Computer Engineering</span>
-          </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: "0.88rem", fontWeight: 700 }}>Dr. K. S. Trivedi (HOD)</div>
-            <div style={{ fontSize: "0.75rem", color: "#facc15" }}>Head of Department &bull; Computer Science & Eng.</div>
-          </div>
-          <Link href="/" style={{ background: "#ef4444", color: "#fff", textDecoration: "none", padding: "6px 14px", borderRadius: "6px", fontSize: "0.8rem", fontWeight: 700 }}>
-            Sign Out
-          </Link>
-        </div>
-      </header>
-
-      <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "28px 24px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "18px", marginBottom: "28px" }}>
-          <div style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "20px" }}>
-            <div style={{ fontSize: "0.8rem", color: "#94a3b8" }}>Department Students</div>
-            <div style={{ fontSize: "2rem", fontWeight: 800, color: "#38bdf8", marginTop: "4px" }}>480</div>
-            <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "6px" }}>Sem II, IV, VI & VIII</div>
-          </div>
-          <div style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "20px" }}>
-            <div style={{ fontSize: "0.8rem", color: "#94a3b8" }}>Active Faculty Members</div>
-            <div style={{ fontSize: "2rem", fontWeight: 800, color: "#10b981", marginTop: "4px" }}>24</div>
-            <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "6px" }}>100% attendance today</div>
-          </div>
-          <div style={{ background: "#1e293b", border: "1px solid #334155", borderRadius: "12px", padding: "20px" }}>
-            <div style={{ fontSize: "0.8rem", color: "#94a3b8" }}>Avg Dept Attendance</div>
-            <div style={{ fontSize: "2rem", fontWeight: 800, color: "#facc15", marginTop: "4px" }}>87.6%</div>
-            <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "6px" }}>Saraswati & Sanjeevani Wings</div>
+            <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "#ec4899" }}>HOD EXECUTIVE</div>
+            <div style={{ fontSize: "0.72rem", color: "#64748b" }}>Department Administration</div>
           </div>
         </div>
 
+        <nav style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
+          {[
+            { label: "Endorsement Ledger", icon: "🛡️", active: true },
+            { label: "Faculty Allocations", icon: "👨‍🏫", active: false },
+            { label: "Curriculum & Syllabus", icon: "📖", active: false },
+            { label: "Institutional Records", icon: "🏛️", active: false }
+          ].map((item, i) => (
+            <div
+              key={i}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                padding: "12px 16px",
+                borderRadius: "8px",
+                background: item.active ? "#1e293b" : "transparent",
+                color: item.active ? "#ec4899" : "#94a3b8",
+                fontWeight: item.active ? 700 : 500,
+                fontSize: "0.9rem",
+                cursor: "pointer"
+              }}
+            >
+              <span>{item.icon}</span>
+              <span>{item.label}</span>
+            </div>
+          ))}
+        </nav>
+
+        <div style={{ padding: "12px", background: "#1e293b", borderRadius: "10px", display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#ec4899", color: "#fff", display: "grid", placeItems: "center", fontWeight: 800 }}>K</div>
+          <div style={{ flex: 1, overflow: "hidden" }}>
+            <div style={{ fontSize: "0.82rem", fontWeight: 700 }}>Dr. K. S. Trivedi</div>
+            <div style={{ fontSize: "0.7rem", color: "#94a3b8" }}>HOD &bull; Computer Eng.</div>
+          </div>
+          <Link href="/" style={{ color: "#ef4444", textDecoration: "none", fontSize: "0.8rem", fontWeight: 700 }}>✕</Link>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main style={{ flex: 1, padding: "32px", overflowY: "auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "28px" }}>
+          <div>
+            <h1 style={{ fontSize: "1.6rem", fontWeight: 800, margin: 0 }}>Exam Forms Endorsement Ledger</h1>
+            <p style={{ margin: "4px 0 0 0", color: "#94a3b8", fontSize: "0.85rem" }}>Mid-Semester Final Examination Eligibility Approvals &bull; Session 2025-26</p>
+          </div>
+        </div>
+
+        {/* Ledger Grid */}
         <div style={{ background: "#1e293b", borderRadius: "12px", border: "1px solid #334155", padding: "24px" }}>
-          <h3 style={{ fontSize: "1.05rem", fontWeight: 700, marginBottom: "16px" }}>Faculty Load & Subject Distribution</h3>
           <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.88rem" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid #334155", color: "#94a3b8" }}>
-                <th style={{ padding: "10px" }}>Faculty Name</th>
-                <th style={{ padding: "10px" }}>Designation</th>
-                <th style={{ padding: "10px" }}>Assigned Subject</th>
-                <th style={{ padding: "10px" }}>Weekly Hours</th>
-                <th style={{ padding: "10px" }}>Syllabus Covered</th>
+                <th style={{ padding: "12px" }}>Form ID</th>
+                <th style={{ padding: "12px" }}>Enrollment</th>
+                <th style={{ padding: "12px" }}>Student Name</th>
+                <th style={{ padding: "12px" }}>Attendance</th>
+                <th style={{ padding: "12px" }}>Fee Status</th>
+                <th style={{ padding: "12px" }}>Action</th>
               </tr>
             </thead>
             <tbody>
-              {[
-                { name: "Prof. Paresh Patel", role: "Sr. Lecturer", subject: "CE601 - Cloud Computing", hours: "16 hrs", progress: "74%" },
-                { name: "Prof. M. R. Shah", role: "Assistant Prof.", subject: "CE603 - AI & ML Lab", hours: "18 hrs", progress: "68%" },
-                { name: "Dr. D. V. Joshi", role: "Associate Prof.", subject: "CE604 - Compiler Design", hours: "14 hrs", progress: "80%" }
-              ].map((f, i) => (
-                <tr key={i} style={{ borderBottom: "1px solid #334155" }}>
-                  <td style={{ padding: "12px 10px", fontWeight: 700, color: "#f8fafc" }}>{f.name}</td>
-                  <td style={{ padding: "12px 10px", color: "#94a3b8" }}>{f.role}</td>
-                  <td style={{ padding: "12px 10px", color: "#38bdf8" }}>{f.subject}</td>
-                  <td style={{ padding: "12px 10px" }}>{f.hours}</td>
-                  <td style={{ padding: "12px 10px", fontWeight: 700, color: "#10b981" }}>{f.progress}</td>
+              {approvals.map((item) => (
+                <tr key={item.id} style={{ borderBottom: "1px solid #334155" }}>
+                  <td style={{ padding: "14px 12px", fontWeight: 700, color: "#ec4899" }}>{item.id}</td>
+                  <td style={{ padding: "14px 12px" }}>{item.enr}</td>
+                  <td style={{ padding: "14px 12px", fontWeight: 600 }}>{item.name}</td>
+                  <td style={{ padding: "14px 12px", color: "#10b981", fontWeight: 700 }}>{item.att}</td>
+                  <td style={{ padding: "14px 12px", color: "#38bdf8" }}>{item.fee}</td>
+                  <td style={{ padding: "14px 12px" }}>
+                    {item.status === "Pending" ? (
+                      <button
+                        onClick={() => handleApprove(item.id)}
+                        style={{ background: "#ec4899", color: "#fff", border: "none", padding: "6px 14px", borderRadius: "6px", fontWeight: 700, cursor: "pointer", fontSize: "0.8rem" }}
+                      >
+                        Endorse Form
+                      </button>
+                    ) : (
+                      <span style={{ color: "#10b981", fontWeight: 700, fontSize: "0.85rem" }}>✓ Endorsed</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
